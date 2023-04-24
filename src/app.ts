@@ -3,7 +3,7 @@ import express, { Response } from 'express';
 import mongoose from 'mongoose';
 import usersRouter from './routes/users';
 import cardsRouter from './routes/cards';
-import { IUser } from './types/types';
+import { IUser } from './utils/types';
 
 const { PORT = 3000 } = process.env;
 
