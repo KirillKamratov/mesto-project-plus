@@ -11,7 +11,7 @@ export const getAllCards = async (req: Request, res: Response) => {
     const cards = await Cards.find({}).populate('user');
     return res.status(REQUEST_SUCCESS).send(cards);
   } catch (err) {
-    return res.status(ERROR_DEFAULT).send({ message: 'Произошла ошибка' });
+    return res.status(ERROR_DEFAULT).send({ message: 'На сервере произошла ошибка' });
   }
 };
 
@@ -43,7 +43,7 @@ export const deleteCard = async (req: Request, res: Response) => {
     const cardToDelete = await Cards.findByIdAndRemove(req.params.id);
     return res.status(REQUEST_SUCCESS).send(cardToDelete);
   } catch (err) {
-    return res.status(ERROR_DEFAULT).send({ message: 'Произошла ошибка' });
+    return res.status(ERROR_DEFAULT).send({ message: 'На сервере произошла ошибка' });
   }
 };
 
@@ -56,7 +56,7 @@ export const likeCard = async (req: IUser, res: Response) => {
     );
     return res.status(REQUEST_SUCCESS).send(cardToLike);
   } catch (err) {
-    return res.status(ERROR_DEFAULT).send({ message: 'Произошла ошибка' });
+    return res.status(ERROR_DEFAULT).send({ message: 'На сервере произошла ошибка' });
   }
 };
 
@@ -69,6 +69,6 @@ export const dislikeCard = async (req: IUser, res: Response) => {
     );
     return res.status(REQUEST_SUCCESS).send(cardToDislike);
   } catch (err) {
-    return res.status(ERROR_DEFAULT).send({ message: 'Произошла ошибка' });
+    return res.status(ERROR_DEFAULT).send({ message: 'На сервере произошла ошибка' });
   }
 };

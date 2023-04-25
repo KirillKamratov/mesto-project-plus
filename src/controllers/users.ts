@@ -11,7 +11,7 @@ export const getAllUsers = async (req: Request, res: Response) => {
     const users = await Users.find({});
     return res.status(REQUEST_SUCCESS).send(users);
   } catch (err) {
-    return res.status(ERROR_DEFAULT).send({ message: 'Произошла ошибка' });
+    return res.status(ERROR_DEFAULT).send({ message: 'На сервере произошла ошибка' });
   }
 };
 
@@ -35,7 +35,7 @@ export const getUser = async (req: Request, res: Response) => {
     if (err instanceof mongoose.Error.CastError) {
       return res.status(ERROR_INVALID_DATA).send({ message: err.message });
     }
-    return res.status(ERROR_DEFAULT).send({ message: 'Произошла ошибка' });
+    return res.status(ERROR_DEFAULT).send({ message: 'На сервере произошла ошибка' });
   }
 };
 
@@ -58,7 +58,7 @@ export const createUser = async (req: Request, res: Response) => {
       return res.status(ERROR_INVALID_DATA).send({ message: err.message });
     }
 
-    return res.status(ERROR_DEFAULT).send({ message: 'Ошибка на стороне сервера' });
+    return res.status(ERROR_DEFAULT).send({ message: 'На сервере произошла ошибка' });
   }
 };
 
@@ -81,7 +81,7 @@ export const updateProfile = async (req: IUser, res: Response) => {
       return res.status(ERROR_INVALID_DATA).send({ message: err.message });
     }
 
-    return res.status(ERROR_DEFAULT).send({ message: 'Ошибка на стороне сервера' });
+    return res.status(ERROR_DEFAULT).send({ message: 'На сервере произошла ошибка' });
   }
 };
 
@@ -104,6 +104,6 @@ export const updateAvatar = async (req: IUser, res: Response) => {
       return res.status(ERROR_INVALID_DATA).send({ message: err.message });
     }
 
-    return res.status(ERROR_DEFAULT).send({ message: 'Ошибка на стороне сервера' });
+    return res.status(ERROR_DEFAULT).send({ message: 'На сервере произошла ошибка' });
   }
 };
