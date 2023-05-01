@@ -1,7 +1,8 @@
 import mongoose, { Model, Document } from 'mongoose';
 import validator from 'validator';
 import bcrypt from 'bcrypt';
-import { AVATAR_URL_REG_EXP } from '../utils/constants';
+import { PICTURE_URL_REG_EXP } from '../utils/constants';
+import UnauthorizedError from '../errors/unauthorized';
 
 interface IUser {
   name: string;
@@ -35,7 +36,7 @@ const userSchema = new mongoose.Schema<IUser, UserModel>({
     type: String,
     default: 'https://pictures.s3.yandex.net/resources/jacques-cousteau_1604399756.png',
     validate: {
-      validator: (link: string) => AVATAR_URL_REG_EXP.test(link),
+      validator: (link: string) => PICTURE_URL_REG_EXP.test(link),
       message: 'Некорректная ссылка',
     },
   },
@@ -58,12 +59,12 @@ const userSchema = new mongoose.Schema<IUser, UserModel>({
 userSchema.static('findUserByCredentials', function findUserByCredentials(email: string, password: string) {
   return this.findOne({ email }).select('+password').then((user) => {
     if (!user) {
-      return Promise.reject(new Error('Неправильные почта или пароль'));
+      throw new UnauthorizedError('Неправильные почта или пароль');
     }
 
     return bcrypt.compare(password, user.password).then((matched) => {
       if (!matched) {
-        return Promise.reject(new Error('Неправильные почта или пароль'));
+        throw new UnauthorizedError('Неправильные почта или пароль');
       }
 
       return user;

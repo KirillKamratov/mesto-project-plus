@@ -1,9 +1,10 @@
 import { NextFunction, Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import mongoose from 'mongoose';
 import Users from '../models/users';
 import { IUser } from '../utils/types';
-import { ERROR_NOT_FOUND, REQUEST_SUCCESS, CREATED_SUCCESS } from '../utils/constants';
+import { REQUEST_SUCCESS, CREATED_SUCCESS } from '../utils/constants';
 import NotFoundError from '../errors/not-found';
 import InvalidDataError from '../errors/invalid-data';
 import ConflictError from '../errors/conflict';
@@ -43,9 +44,6 @@ export const createUser = (req: Request, res: Response, next: NextFunction) => {
   const {
     name, about, avatar, email, password,
   } = req.body;
-  if (!name || !about || !avatar || !email || !password) {
-    throw new InvalidDataError('Переданы не все обязательны поля');
-  }
   return bcrypt.hash(password, 10)
     .then((hash: string) => {
       Users.create({
@@ -59,40 +57,41 @@ export const createUser = (req: Request, res: Response, next: NextFunction) => {
           res.status(CREATED_SUCCESS).send(data);
         })
         .catch((err) => {
+          if (err instanceof mongoose.Error.ValidationError) {
+            throw new InvalidDataError('Переданы не все обязательны поля');
+          }
           if (err.code === 11000) {
             throw new ConflictError('Такой пользователь уже существует');
           }
+          next(err);
         });
-    })
-    .catch((err) => {
-      next(err);
     });
 };
 
 export const updateProfile = (req: IUser, res: Response, next: NextFunction) => {
   const { name, about } = req.body;
-  if (!name || !about) {
-    throw new InvalidDataError('Переданы не все обязательны поля');
-  }
-  Users.findByIdAndUpdate(req.user?._id, req.body)
+  Users.findByIdAndUpdate(req.user?._id, { name, about })
     .then((data) => {
       res.status(CREATED_SUCCESS).send(data);
     })
     .catch((err) => {
+      if (err instanceof mongoose.Error.ValidationError) {
+        throw new InvalidDataError('Переданы не все обязательны поля');
+      }
       next(err);
     });
 };
 
 export const updateAvatar = (req: IUser, res: Response, next: NextFunction) => {
   const { avatar } = req.body;
-  if (!avatar) {
-    throw new InvalidDataError('Переданы не все обязательны поля');
-  }
-  Users.findByIdAndUpdate(req.user?._id, req.body)
+  Users.findByIdAndUpdate(req.user?._id, { avatar })
     .then((data) => {
-      res.status(CREATED_SUCCESS).send(data);
+      res.status(REQUEST_SUCCESS).send(data);
     })
     .catch((err) => {
+      if (err instanceof mongoose.Error.ValidationError) {
+        throw new InvalidDataError('Переданы не все обязательны поля');
+      }
       next(err);
     });
 };
@@ -113,9 +112,6 @@ export const login = (req: IUser, res: Response, next: NextFunction) => {
       });
     })
     .catch((err) => {
-      if (err.code === ERROR_NOT_FOUND) {
-        throw new NotFoundError('Такого пользователя не существует');
-      }
       next(err);
     });
 };

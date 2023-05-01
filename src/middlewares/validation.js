@@ -1,5 +1,5 @@
 import { celebrate, Joi } from 'celebrate';
-import { AVATAR_URL_REG_EXP } from '../utils/constants';
+import { OBJECTID_REG_EXP, PICTURE_URL_REG_EXP } from '../utils/constants';
 
 export const userDataValidation = celebrate({
   body: Joi.object().keys({
@@ -8,9 +8,15 @@ export const userDataValidation = celebrate({
   }),
 });
 
+export const idValidation = celebrate({
+  params: Joi.object().keys({
+    userId: Joi.string().regex(OBJECTID_REG_EXP),
+  }),
+});
+
 export const avatarValidation = celebrate({
   body: Joi.object().keys({
-    avatar: Joi.string().required().pattern(AVATAR_URL_REG_EXP, 'URL'),
+    avatar: Joi.string().required().pattern(PICTURE_URL_REG_EXP, 'URL'),
   }),
 });
 

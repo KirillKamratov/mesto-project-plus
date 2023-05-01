@@ -1,4 +1,3 @@
-import path from 'path';
 import express from 'express';
 import mongoose from 'mongoose';
 import { errors } from 'celebrate';
@@ -18,8 +17,6 @@ mongoose.connect('mongodb://localhost:27017/mestodb');
 app.use(requestLogger);
 
 app.use(appRoutes);
-
-app.use(express.static(path.join(__dirname, 'public')));
 
 app.use(errorLogger);
 
