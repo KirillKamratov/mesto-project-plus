@@ -40,32 +40,25 @@ export const getMyself = (req: IUser, res: Response, next: NextFunction) => {
     });
 };
 
-export const createUser = (req: Request, res: Response, next: NextFunction) => {
-  const {
-    name, about, avatar, email, password,
-  } = req.body;
-  return bcrypt.hash(password, 10)
-    .then((hash: string) => {
-      Users.create({
-        password: hash,
-        email,
-        name,
-        about,
-        avatar,
-      })
-        .then((data) => {
-          res.status(CREATED_SUCCESS).send(data);
-        })
-        .catch((err) => {
-          if (err instanceof mongoose.Error.ValidationError) {
-            throw new InvalidDataError('Переданы не все обязательны поля');
-          }
-          if (err.code === 11000) {
-            throw new ConflictError('Такой пользователь уже существует');
-          }
-          next(err);
-        });
+export const createUser = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const {
+      name, about, avatar, email,
+    } = req.body;
+    const password = await bcrypt.hash(req.body.password, 10);
+    const user = await Users.create({
+      name, about, avatar, password, email,
     });
+    res.status(201).send({ _id: user._id, email: user.email });
+  } catch (err: any) {
+    if (err instanceof mongoose.Error.ValidationError) {
+      throw new InvalidDataError('Переданы не все обязательны поля');
+    }
+    if (err.code === 11000) {
+      throw new ConflictError('Такой пользователь уже существует');
+    }
+    next(err);
+  }
 };
 
 export const updateProfile = (req: IUser, res: Response, next: NextFunction) => {
