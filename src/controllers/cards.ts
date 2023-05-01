@@ -1,74 +1,69 @@
-import { Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import mongoose from 'mongoose';
 import Cards from '../models/cards';
 import { IUser } from '../utils/types';
-import {
-  ERROR_DEFAULT, ERROR_INVALID_DATA, REQUEST_SUCCESS,
-} from '../utils/constants';
+import { REQUEST_SUCCESS } from '../utils/constants';
+import InvalidDataError from '../errors/invalid-data';
+import ForbiddenError from '../errors/forbidden';
 
-export const getAllCards = async (req: Request, res: Response) => {
-  try {
-    const cards = await Cards.find({}).populate('user');
-    return res.status(REQUEST_SUCCESS).send(cards);
-  } catch (err) {
-    return res.status(ERROR_DEFAULT).send({ message: 'На сервере произошла ошибка' });
-  }
+export const getAllCards = (req: Request, res: Response, next: NextFunction) => {
+  Cards.find({}).populate('user')
+    .then((data) => res.status(REQUEST_SUCCESS).send(data))
+    .catch((err) => {
+      next(err);
+    });
 };
 
-export const createCard = async (req: Request, res: Response) => {
-  try {
-    const { name, link } = req.body;
-    if (!name || !link) {
-      const error = new Error('Переданы не все обязательны поля');
-      error.name = 'CustomValid';
-      throw error;
-    }
-    const newCard = await Cards.create(req.body);
-    return res.status(201).send(newCard);
-  } catch (err) {
-    if (err instanceof Error && err.name === 'CustomValid') {
-      return res.status(ERROR_INVALID_DATA).send({ message: err.message });
-    }
-
-    if (err instanceof mongoose.Error.ValidationError) {
-      return res.status(ERROR_INVALID_DATA).send({ message: err.message });
-    }
-
-    return res.status(ERROR_DEFAULT).send({ message: 'Ошибка на стороне сервера' });
-  }
+export const createCard = (req: IUser, res: Response, next: NextFunction) => {
+  const { name, link } = req.body;
+  const ownerId = req.user?._id;
+  Cards.create({ name, link, ownerId })
+    .then((data) => res.status(REQUEST_SUCCESS).send(data))
+    .catch((err) => {
+      if (err instanceof mongoose.Error.ValidationError) {
+        throw new InvalidDataError('Данные некорректны');
+      }
+      next(err);
+    });
 };
 
-export const deleteCard = async (req: Request, res: Response) => {
-  try {
-    const cardToDelete = await Cards.findByIdAndRemove(req.params.id);
-    return res.status(REQUEST_SUCCESS).send(cardToDelete);
-  } catch (err) {
-    return res.status(ERROR_DEFAULT).send({ message: 'На сервере произошла ошибка' });
+export const deleteCard = async (req: IUser, res: Response, next: NextFunction) => {
+  if (req.user?._id !== req.body._id) {
+    throw new ForbiddenError('Вы пытаетесь удалить чужую карточку');
   }
+  Cards.findByIdAndRemove(req.params.id)
+    .then((data) => {
+      res.status(REQUEST_SUCCESS).send(data);
+    })
+    .catch((err) => {
+      next(err);
+    });
 };
 
-export const likeCard = async (req: IUser, res: Response) => {
-  try {
-    const cardToLike = Cards.findByIdAndUpdate(
-      req.params.cardId,
-      { $addToSet: { likes: req.user?._id } },
-      { new: true },
-    );
-    return res.status(REQUEST_SUCCESS).send(cardToLike);
-  } catch (err) {
-    return res.status(ERROR_DEFAULT).send({ message: 'На сервере произошла ошибка' });
-  }
+export const likeCard = (req: IUser, res: Response, next: NextFunction) => {
+  Cards.findByIdAndUpdate(
+    req.params.cardId,
+    { $addToSet: { likes: req.user?._id } },
+    { new: true },
+  )
+    .then((data) => {
+      res.status(REQUEST_SUCCESS).send(data);
+    })
+    .catch((err) => {
+      next(err);
+    });
 };
 
-export const dislikeCard = async (req: IUser, res: Response) => {
-  try {
-    const cardToDislike = Cards.findByIdAndUpdate(
-      req.params.cardId,
-      { $pull: { likes: req.user?._id } },
-      { new: true },
-    );
-    return res.status(REQUEST_SUCCESS).send(cardToDislike);
-  } catch (err) {
-    return res.status(ERROR_DEFAULT).send({ message: 'На сервере произошла ошибка' });
-  }
+export const dislikeCard = async (req: IUser, res: Response, next: NextFunction) => {
+  Cards.findByIdAndUpdate(
+    req.params.cardId,
+    { $pull: { likes: req.user?._id } },
+    { new: true },
+  )
+    .then((data) => {
+      res.status(REQUEST_SUCCESS).send(data);
+    })
+    .catch((err) => {
+      next(err);
+    });
 };

@@ -1,9 +1,10 @@
 import path from 'path';
-import express, { Response } from 'express';
+import express from 'express';
 import mongoose from 'mongoose';
-import usersRouter from './routes/users';
-import cardsRouter from './routes/cards';
-import { IUser } from './utils/types';
+import { errors } from 'celebrate';
+import appRoutes from './routes/index';
+import errorHandler from './middlewares/errors';
+import { requestLogger, errorLogger } from './middlewares/logger';
 
 const { PORT = 3000 } = process.env;
 
@@ -14,18 +15,17 @@ app.use(express.json());
 
 mongoose.connect('mongodb://localhost:27017/mestodb');
 
-app.use((req: IUser, res: Response, next) => {
-  req.user = {
-    _id: '64443005a8446d258e0c9645',
-  };
+app.use(requestLogger);
 
-  next();
-});
-
-app.use('/users', usersRouter);
-app.use('/cards', cardsRouter);
+app.use(appRoutes);
 
 app.use(express.static(path.join(__dirname, 'public')));
+
+app.use(errorLogger);
+
+app.use(errors());
+app.use(errorHandler);
+
 app.listen(PORT, () => {
   console.log('Ссылка на сервер:');
   console.log(PORT);
