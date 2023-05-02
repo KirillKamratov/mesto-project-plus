@@ -8,10 +8,11 @@ interface SessionRequest extends Request {
   user?: string | JwtPayload;
 }
 
+// eslint-disable-next-line consistent-return
 const auth = async (req: SessionRequest, res: Response, next: NextFunction) => {
   const { authorization } = req.headers;
   if (!authorization || !authorization.startsWith('Bearer ')) {
-    throw new UnauthorizedError('Требуется авторизация');
+    return next(new UnauthorizedError('Требуется авторизация'));
   }
   const token = authorization.replace('Bearer ', '');
   let payload;
@@ -19,7 +20,7 @@ const auth = async (req: SessionRequest, res: Response, next: NextFunction) => {
     payload = jwt.verify(token, SECRET_KEY!);
   } catch (error) {
     const newError = new UnauthorizedError('Требуется авторизация');
-    next(newError);
+    return next(newError);
   }
   req.user = payload;
   next();

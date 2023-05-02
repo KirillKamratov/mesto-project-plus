@@ -21,13 +21,16 @@ export const getAllUsers = async (req: Request, res: Response, next: NextFunctio
 
 export const getUser = async (req: Request, res: Response, next: NextFunction) => {
   Users.findOne({ _id: req.params.userId })
+    // eslint-disable-next-line consistent-return
     .then((user) => {
       if (!user) {
-        throw new NotFoundError('Нет пользователя с таким id');
+        return next(new NotFoundError('Нет пользователя с таким id'));
       }
       res.send(user);
     })
-    .catch(next);
+    .catch((err) => {
+      next(err);
+    });
 };
 
 export const getMyself = (req: IUser, res: Response, next: NextFunction) => {
@@ -40,6 +43,7 @@ export const getMyself = (req: IUser, res: Response, next: NextFunction) => {
     });
 };
 
+// eslint-disable-next-line consistent-return
 export const createUser = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const {
@@ -52,10 +56,10 @@ export const createUser = async (req: Request, res: Response, next: NextFunction
     res.status(201).send({ _id: user._id, email: user.email });
   } catch (err: any) {
     if (err instanceof mongoose.Error.ValidationError) {
-      throw new InvalidDataError('Переданы не все обязательны поля');
+      return next(new InvalidDataError('Переданы не все обязательны поля'));
     }
     if (err.code === 11000) {
-      throw new ConflictError('Такой пользователь уже существует');
+      return next(new ConflictError('Такой пользователь уже существует'));
     }
     next(err);
   }
@@ -63,37 +67,34 @@ export const createUser = async (req: Request, res: Response, next: NextFunction
 
 export const updateProfile = (req: IUser, res: Response, next: NextFunction) => {
   const { name, about } = req.body;
-  Users.findByIdAndUpdate(req.user?._id, { name, about })
-    .then((data) => {
-      res.status(CREATED_SUCCESS).send(data);
-    })
-    .catch((err) => {
-      if (err instanceof mongoose.Error.ValidationError) {
-        throw new InvalidDataError('Переданы не все обязательны поля');
-      }
-      next(err);
-    });
-};
-
-export const updateAvatar = (req: IUser, res: Response, next: NextFunction) => {
-  const { avatar } = req.body;
-  Users.findByIdAndUpdate(req.user?._id, { avatar })
+  Users.findByIdAndUpdate(req.user?._id, { name, about }, { new: true, runValidators: true })
     .then((data) => {
       res.status(REQUEST_SUCCESS).send(data);
     })
     .catch((err) => {
       if (err instanceof mongoose.Error.ValidationError) {
-        throw new InvalidDataError('Переданы не все обязательны поля');
+        return next(new InvalidDataError('Переданы не все обязательны поля'));
       }
-      next(err);
+      return next(err);
+    });
+};
+
+export const updateAvatar = (req: IUser, res: Response, next: NextFunction) => {
+  const { avatar } = req.body;
+  Users.findByIdAndUpdate(req.user?._id, { avatar }, { new: true, runValidators: true })
+    .then((data) => {
+      res.status(REQUEST_SUCCESS).send(data);
+    })
+    .catch((err) => {
+      if (err instanceof mongoose.Error.ValidationError) {
+        return next(new InvalidDataError('Переданы не все обязательны поля'));
+      }
+      return next(err);
     });
 };
 
 export const login = (req: IUser, res: Response, next: NextFunction) => {
   const { email, password } = req.body;
-  if (!email || !password) {
-    throw new InvalidDataError('Переданы не все обязательны поля');
-  }
   Users.findUserByCredentials(email, password)
     .then(() => {
       res.status(CREATED_SUCCESS).send({

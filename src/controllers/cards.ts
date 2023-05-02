@@ -5,6 +5,7 @@ import { IUser } from '../utils/types';
 import { CREATED_SUCCESS, REQUEST_SUCCESS } from '../utils/constants';
 import InvalidDataError from '../errors/invalid-data';
 import ForbiddenError from '../errors/forbidden';
+import NotFoundError from '../errors/not-found';
 
 export const getAllCards = (req: Request, res: Response, next: NextFunction) => {
   Cards.find({}).populate(['owner', 'likes'])
@@ -28,22 +29,18 @@ export const createCard = (req: IUser, res: Response, next: NextFunction) => {
 };
 
 export const deleteCard = async (req: IUser, res: Response, next: NextFunction) => {
-  const { cardId } = req.params;
-  const userId = req.user?._id;
-  Cards.findById(cardId).populate(['owner', 'likes'])
-    .then((card) => {
-      if (card?.owner.toString() !== userId) {
-        throw new ForbiddenError('Можно удалять только свои карточки');
-      } else {
-        Cards.findByIdAndDelete(cardId)
-          .then((data) => {
-            res.status(REQUEST_SUCCESS).send(data);
-          });
-      }
-    })
-    .catch((err) => {
-      err(next);
-    });
+  try {
+    const { cardId } = req.params;
+
+    const cardToDelete = await Cards.findById(cardId).orFail(() => new NotFoundError('Такой карточки не существует'));
+    if (cardToDelete.owner.toString() !== req.user?._id) {
+      return next(new ForbiddenError('Вы пытаетесь удалить чужую карточку'));
+    }
+    const deletedCard = await cardToDelete.deleteOne();
+    return res.status(REQUEST_SUCCESS).send(deletedCard);
+  } catch (err: any) {
+    return err(next);
+  }
 };
 
 export const likeCard = (req: IUser, res: Response, next: NextFunction) => {
